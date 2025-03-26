@@ -1,0 +1,2313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js; style-src 'self' 'unsafe-inline'; connect-src 'self' wss://0.peerjs.com wss://*.peerjs.com https://*.peerjs.com; img-src 'self';">
+    <link rel="icon" href="favicon.gif" type="image/gif" />
+    <title>dogchat - secure p2p encrypted chat</title>
+    <style>
+        /* CSS Variables and Base Styles */
+        :root {
+            /* Color Palette - Pink/white/blue theme */
+            --primary: #ff9ed2;          /* Main pink */
+            --primary-dark: #e57bb7;     /* Darker pink for depth */
+            --secondary: #63c5c5;        /* Blue accent */
+            --tertiary: #f2a6e5;         /* Soft pink accent */
+            --accent: #b588e7;           /* Purple accent */
+            --accent-soft: rgba(181, 136, 231, 0.3); /* Soft purple for backgrounds */
+            
+            /* UI Elements */
+            --panel-bg: rgba(255, 158, 210, 0.2);     /* Semi-transparent pink */
+            --panel-border: rgba(255, 255, 255, 0.2); /* Subtle white border */
+            --panel-glow: rgba(255, 130, 200, 0.2);   /* Pink glow effect */
+            
+            /* Text Colors */
+            --text-primary: rgba(0, 0, 0, 0.8);        /* Dark text for contrast */
+            --text-secondary: rgba(0, 0, 0, 0.6);      /* Slightly dimmed black for secondary text */
+            --text-bright: rgba(255, 255, 255, 0.95);  /* Bright text for dark backgrounds */
+            --heading-color: #9055A2;                  /* Purple for headings */
+            
+            /* Backgrounds */
+            --body-bg: linear-gradient(135deg, #ffd1ec, #c7f0f0); /* Gradient background */
+        }
+
+        /* Reset and base element styling */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Consolas', monospace;
+            margin: 0;
+            font-size: 16px;
+            color: var(--text-primary);
+            background: var(--body-bg);
+            background-attachment: fixed;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Container */
+        #container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px 15px;
+        }
+
+        #container a {
+            color: var(--primary-dark);
+            font-weight: bold;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        #container a:hover {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+
+        /* Top Bar with marquee */
+        #topBar {
+            width: 100%;
+            padding: 10px;
+            font-size: smaller;
+            background-color: var(--panel-bg);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-bottom: 1px solid var(--panel-border);
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        /* Main Content Area */
+        main {
+            padding: 30px;
+            border-radius: 24px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        /* Footer Styling */
+        footer {
+            background-color: var(--panel-bg);
+            width: 100%;
+            padding: 15px;
+            text-align: center;
+            margin-top: 20px;
+            border-radius: 24px;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid var(--panel-border);
+            color: var(--text-primary);
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            color: var(--heading-color);
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 46px;
+            position: relative;
+            display: inline-block;
+            text-transform: lowercase;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), transparent);
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        strong {
+            color: var(--heading-color);
+        }
+
+        /* Media Queries for Responsive Design */
+        @media only screen and (max-width: 800px) {
+            h1 {
+                font-size: 36px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                margin-bottom: 10px;
+            }
+        }
+
+        /* Chat-specific styles that blend with site theme */
+        .key-section {
+            margin-bottom: 40px;
+        }
+        
+        .key-display {
+            background-color: rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 14px;
+            height: 80px;
+            font-family: monospace;
+        }
+        
+        #chat-interface {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 400px; /* Increased for better chat visibility */
+        }
+        
+        #message-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.05);
+            max-height: 400px; /* Ensure container has max height for scrolling */
+            scroll-behavior: smooth; /* Smooth scrolling */
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .sent {
+            background-color: rgba(180, 180, 255, 0.2);
+            border-left: 3px solid #8080ff;
+            margin-left: auto;
+        }
+        
+        .received {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left: 3px solid #ccc;
+            margin-right: auto;
+        }
+        
+        .system-message {
+            background-color: rgba(255, 255, 170, 0.1);
+            border-left: 3px solid #ffff80;
+            width: 100%;
+            text-align: center;
+            font-style: italic;
+        }
+        
+        .timestamp {
+            font-size: 10px;
+            color: #999;
+            display: block;
+            margin-top: 4px;
+        }
+        
+        #message-input-area {
+            display: flex;
+            padding: 10px 0;
+        }
+        
+        #message-input {
+            flex-grow: 1;
+            background-color: rgba(0, 0, 0, 0.1);
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        
+        #message-input:focus {
+            outline: none;
+            border-color: #8080ff;
+        }
+        
+        .chat-btn {
+            background-color: #8080ff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        
+        .setup-section {
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 8px;
+            background-color: rgba(0, 0, 0, 0.1);
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        
+        .input-group textarea {
+            height: 80px;
+            resize: vertical;
+            font-family: monospace;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-online {
+            background-color: #8f8;
+        }
+        
+        .status-offline {
+            background-color: #f88;
+        }
+        
+        .status-connecting {
+            background-color: #ff8;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .encryption-status {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.05);
+            border-radius: 5px;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-main {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            background-color: rgba(0, 0, 0, 0.05);
+            border-radius: 5px;
+            margin-bottom: 5px;
+            position: relative;
+        }
+        
+        .status-toggle-btn {
+            position: absolute;
+            right: 5px;
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 0 5px;
+            line-height: 1;
+        }
+        
+        .status-toggle-btn:hover {
+            color: #fff;
+        }
+        
+        .status-details {
+            font-size: 0.85em;
+            color: #999;
+            max-height: 60px;
+            overflow-y: auto;
+            padding: 5px 0;
+            display: none; /* Only show when there are details */
+        }
+        
+        .status-message {
+            margin: 3px 0;
+            padding-left: 15px;
+            position: relative;
+        }
+        
+        .status-message:before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 8px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background-color: #999;
+        }
+        
+        .status-message.success:before {
+            background-color: #4CAF50;
+        }
+        
+        .status-message.warning:before {
+            background-color: #FFC107;
+        }
+        
+        .status-message.error:before {
+            background-color: #F44336;
+        }
+        
+        .notification {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 3px solid;
+        }
+        
+        .notification.warning {
+            background-color: rgba(255, 255, 0, 0.1);
+            border-color: #ffff80;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #8080ff;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        .small-note {
+            font-size: 0.8em;
+            color: #999;
+            margin-top: 4px;
+        }
+        
+        .confirmation-dialog {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ffff80;
+            background-color: rgba(255, 255, 0, 0.05);
+            border-radius: 5px;
+        }
+        
+        .username {
+            font-weight: bold;
+            margin-right: 8px;
+            color: #8080ff;
+        }
+        
+        .message-content {
+            display: inline-block;
+        }
+        
+        .sent .username {
+            color: #8080ff;
+        }
+        
+        .received .username {
+            color: #ff8080;
+        }
+        
+        /* Mode toggle styles */
+        .mode-toggle {
+            display: flex;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .mode-option {
+            flex: 1;
+            padding: 10px 20px;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            border: 1px solid #444;
+        }
+        
+        .mode-option.active {
+            background-color: #8080ff;
+            color: white;
+        }
+        
+        /* Panel styles */
+        .card {
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        
+        /* Chat room info */
+        .room-info {
+            background-color: rgba(128, 128, 255, 0.1);
+            border: 1px solid #8080ff;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .room-name {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        
+        .room-status {
+            font-style: italic;
+        }
+        
+        .participants {
+            margin-top: 10px;
+        }
+        
+        .participant {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .connection-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background-color: #4CAF50; /* Green */
+        }
+        
+        .status-inactive {
+            background-color: #FFC107; /* Yellow */
+        }
+        
+        .status-offline {
+            background-color: #F44336; /* Red */
+        }
+        
+        .status-unknown {
+            background-color: #9E9E9E; /* Gray */
+        }
+        
+        .status-error {
+            background-color: #9C27B0; /* Purple */
+        }
+        
+        .github-repo-link {
+            position: absolute !important;
+            right: 20px !important;
+            top: 20px !important;
+            background-color: #8080ff !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-radius: 5px !important;
+            padding: 10px 15px !important;
+            text-decoration: none !important;
+            font-weight: normal !important;
+            cursor: pointer !important;
+            display: inline-block !important;
+            text-align: center !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+        }
+        
+        #github-link-create:hover, #github-link-join:hover {
+            background-color: #6060dd !important;
+            color: #ffffff !important;
+        }
+        
+        #message-input-area {
+            display: flex;
+            padding: 10px 0;
+        }
+        
+        /* Set fonts for input fields but don't force lowercase */
+        input, textarea {
+            text-transform: none !important;
+            font-family: 'Consolas', monospace !important;
+        }
+        
+        /* Keep public key text case as-is */
+        .key-display {
+            text-transform: none !important;
+            font-family: 'Consolas', monospace !important;
+        }
+        
+        /* Override input text transformation for username fields */
+        #username-input, #join-username-input {
+            text-transform: lowercase !important;
+        }
+        
+        /* Add new spacing class */
+        .key-spacing {
+            margin-top: 20px !important;
+            margin-bottom: 20px !important;
+            display: block !important;
+        }
+        
+        /* Add button alignment styles */
+        .button-container {
+            display: flex;
+            justify-content: flex-start;
+            margin-top: 15px;
+            gap: 10px;
+        }
+        
+        /* Style for centered, larger create room button */
+        .create-room-btn-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+        
+        #create-room-btn {
+            font-size: 1.2em;
+            padding: 15px 30px;
+            background-color: #8080ff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            margin-left: 0;
+        }
+        
+        #create-room-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            background-color: #6060dd;
+        }
+        
+        /* Apply the same styling to join-room-btn */
+        #join-room-btn {
+            font-size: 1.2em;
+            padding: 15px 30px;
+            background-color: #8080ff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            margin-left: 0;
+        }
+        
+        #join-room-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            background-color: #6060dd;
+        }
+        
+        /* Add class for join button container */
+        .join-room-btn-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+        
+        /* Make all button fonts consistent */
+        .chat-btn, #create-room-btn, #join-room-btn, .github-repo-link {
+            font-family: monospace;
+            font-size: 1em;
+            text-transform: lowercase;
+        }
+        
+        /* Security info section styles */
+        .security-info-section {
+            margin: 40px auto 20px;
+            padding: 20px;
+            max-width: 900px;
+        }
+        
+        .security-info-section h2 {
+            margin-bottom: 25px;
+            color: var(--heading-color);
+            font-size: 1.5em;
+            text-transform: lowercase;
+            text-align: center;
+        }
+        
+        .security-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+        }
+        
+        .security-list li {
+            margin-bottom: 20px;
+            padding: 12px 15px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 5px 5px 0;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        
+        .security-feature {
+            font-weight: bold;
+            color: var(--accent);
+            margin-right: 5px;
+        }
+        
+        /* Add style for technical specifications paragraphs */
+        .security-info-section p {
+            font-family: monospace !important;
+            font-size: 0.95em;
+            line-height: 1.5;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="topBar">
+            <marquee direction="left">dogchat · secure encrypted chat · peer-to-peer · no servers</marquee>
+        </div>
+        
+        <main>
+            <a href="https://github.com/Sheeves11/dogchat" class="github-repo-link">Visit GitHub Repository</a>
+            <h1>dogchat</h1>
+            
+            <!-- Security Status Display -->
+            <div class="encryption-status" id="encryption-status">
+                <div class="status-main">
+                    <span class="status-indicator status-offline" id="connection-indicator"></span>
+                    <span id="encryption-status-text">encryption not active - create or join a room to begin</span>
+                    <button id="toggle-status-details" class="status-toggle-btn" title="Toggle connection status history">⊕</button>
+                </div>
+                <div class="status-details" id="status-details">
+                    <!-- Detailed status messages will appear here -->
+                </div>
+            </div>
+            
+            <!-- Setup Interface -->
+            <div id="setup-interface">
+                <div class="mode-toggle">
+                    <div class="mode-option active" id="create-room-option">Create Room</div>
+                    <div class="mode-option" id="join-room-option">Join Room</div>
+                </div>
+                
+                <div id="create-room-panel">
+                    <div class="card">
+                        <div class="card-header">Create a Secure Chat Room</div>
+                        
+                        <p>Create your own secure chat room where others can join you. messages will be encrypted with strong RSA-2048 encryption. private keys are stored in memory and are deleted when the tab is closed</p>
+                        
+                        <div class="notification warning">
+                            <strong>For maximum security:</strong> exchange public keys with your contacts in person or via an already secure channel.
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="room-name-input">Choose a Room Name:</label>
+                            <input type="text" id="room-name-input" placeholder="Enter a unique room name" autocomplete="off">
+                            <p class="small-note">This is the name others will use to find your room.</p>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="username-input">Your Display Name:</label>
+                            <input type="text" id="username-input" placeholder="Enter your name" autocomplete="off">
+                        </div>
+                        
+                        <div class="key-section">
+                            <p class="key-spacing"><strong>public key</strong> (send this to your chat members, in a secure manner!!!):</p>
+                            <div class="key-display key-spacing" id="public-key-display"></div>
+                            <div class="button-container">
+                                <button class="chat-btn" id="regenerate-keys-btn">Generate New Keys</button>
+                                <button class="chat-btn" id="copy-public-key-btn">Copy Public Key</button>
+                            </div>
+                        </div>
+                        
+                        <div class="create-room-btn-container">
+                            <button id="create-room-btn" class="chat-btn">Create Chat Room</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="join-room-panel" class="hidden">
+                    <div class="card">
+                        <div class="card-header">Join a Secure Chat Room</div>
+                        
+                        <p>Join an existing secure chat room. you'll need the room name and the host's public key.</p>
+                        
+                        <div class="input-group">
+                            <label for="join-room-name-input">Room to Join:</label>
+                            <input type="text" id="join-room-name-input" placeholder="Enter the room name to join" autocomplete="off">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="join-username-input">Your Display Name:</label>
+                            <input type="text" id="join-username-input" placeholder="Enter your name" autocomplete="off">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="host-public-key-input">Host's Public Key:</label>
+                            <textarea id="host-public-key-input" placeholder="Paste the room host's public key here..."></textarea>
+                            <p class="small-note">For security, this should be obtained directly from the room host.</p>
+                        </div>
+                        
+                        <div class="key-section">
+                            <p class="key-spacing"><strong>Your Public Key</strong> (automatically shared during connection):</p>
+                            <div class="key-display key-spacing" id="join-public-key-display"></div>
+                            <div class="button-container">
+                                <button class="chat-btn" id="join-regenerate-keys-btn">Generate New Keys</button>
+                                <button class="chat-btn" id="copy-join-public-key-btn">Copy Your Public Key</button>
+                            </div>
+                        </div>
+                        
+                        <div class="join-room-btn-container">
+                            <button id="join-room-btn" class="chat-btn">Join Chat Room</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat Interface (initially hidden) -->
+            <div id="chat-interface" class="hidden">
+                <div class="room-info">
+                    <div class="room-name" id="room-display-name">Room: <span id="current-room-name"></span></div>
+                    <div class="room-status" id="room-status">Waiting for others to join...</div>
+                    <div class="participants" id="participants-list">
+                        <!-- Participants will be added here -->
+                    </div>
+                </div>
+                
+                <div id="message-container">
+                    <!-- Messages will appear here -->
+                    <div class="message system-message">
+                        End-to-end encrypted chat active. messages can only be read by chat participants.
+                    </div>
+                </div>
+                
+                <div id="message-input-area">
+                    <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+                    <button id="send-button" class="chat-btn">Send</button>
+                </div>
+                
+                <div class="action-buttons" style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button id="leave-room-btn" class="chat-btn">Leave Room</button>
+                    <button id="copy-host-key-btn" class="chat-btn">Copy Host Public Key</button>
+                </div>
+                <p class="small-note" style="margin-top: 5px;">Use "Copy Host Public Key" to invite others to the room</p>
+            </div>
+        </main>
+        
+        <div class="security-info-section">
+            <h2>technical specifications</h2>
+            <p>
+                <strong>doggie dogchat!</strong>
+                <br>
+                <br>
+                this is the /most/ secure chat application i could possibly build. it uses true peer-to-peer connections and RSA-2048 encryption. it's all self-contained, so you can inspect the code and signal calls yourself.
+                <br>
+                <br>
+                there's a lot going on in the world right now and i think it's very important to have extreme OPSEC options avalible to the general public. signal is cool but i didn't make signal and it's too complicated to trust explicity.
+                <br>    
+                <br>
+                other encrypted chat apps are great and amazing for most cases, but i've always had a little bit of distrust for them. mostly because i can't understand the large codebases. this is made to be simple enough for anyone to understand.
+                <br>
+                <br>
+                i wanted this to be a single, static HTML page, that you can understand and deploy yourself. there's nothing too complicated here, just a good security framework and basic calls.
+                <br>
+                <br>
+                <strong>some things to note:</strong>
+                <br>
+                <br>
+                private keys are stored as javascript variables that go away when you close your page. messages only come through if the session is active and still open. no messages are stored on ANY server, however the signal framework, webRTC, will likely collect IP addresses. if the NSA grabs your messages along the way, you know they're encrypted at least.
+                <br>
+                <br>
+                this also means that your messages essentially only have one chance to reach you and are gone when the window closes. plan accordingly!
+                <br>
+                <br>
+                for max security, make sure that those public keys are secret forever. make sure you know who you're talking to. connect with TOR unless you're willing to let anyone know who you are and who you are talking to. they won't know /what/ you're saying, but they'll know who you said it to.
+            </p>
+        </div>
+        
+        <footer id="footer">
+            secure p2p encrypted chat - RSA-2048
+        </footer>
+    </div>
+    
+    <!-- PeerJS for WebRTC connections -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    
+    <!-- Main application script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements - Setup
+            const createRoomOption = document.getElementById('create-room-option');
+            const joinRoomOption = document.getElementById('join-room-option');
+            const createRoomPanel = document.getElementById('create-room-panel');
+            const joinRoomPanel = document.getElementById('join-room-panel');
+            const roomNameInput = document.getElementById('room-name-input');
+            const usernameInput = document.getElementById('username-input');
+            const publicKeyDisplay = document.getElementById('public-key-display');
+            const copyPublicKeyBtn = document.getElementById('copy-public-key-btn');
+            const regenerateKeysBtn = document.getElementById('regenerate-keys-btn');
+            const createRoomBtn = document.getElementById('create-room-btn');
+            const joinRoomNameInput = document.getElementById('join-room-name-input');
+            const joinUsernameInput = document.getElementById('join-username-input');
+            const hostPublicKeyInput = document.getElementById('host-public-key-input');
+            const joinPublicKeyDisplay = document.getElementById('join-public-key-display');
+            const copyJoinPublicKeyBtn = document.getElementById('copy-join-public-key-btn');
+            const joinRegenerateKeysBtn = document.getElementById('join-regenerate-keys-btn');
+            const joinRoomBtn = document.getElementById('join-room-btn');
+            
+            // DOM Elements - Chat
+            const setupInterface = document.getElementById('setup-interface');
+            const chatInterface = document.getElementById('chat-interface');
+            const currentRoomName = document.getElementById('current-room-name');
+            const roomStatus = document.getElementById('room-status');
+            const participantsList = document.getElementById('participants-list');
+            const messageContainer = document.getElementById('message-container');
+            const messageInput = document.getElementById('message-input');
+            const sendButton = document.getElementById('send-button');
+            const leaveRoomBtn = document.getElementById('leave-room-btn');
+            const connectionIndicator = document.getElementById('connection-indicator');
+            const encryptionStatusText = document.getElementById('encryption-status-text');
+            const statusDetails = document.getElementById('status-details');
+            
+            // App state
+            let state = {
+                mode: 'create', // 'create' or 'join'
+                keys: {
+                    publicKey: null,
+                    privateKey: null
+                },
+                room: {
+                    name: null,
+                    isHost: false,
+                    participants: {}
+                },
+                peer: null,
+                connections: {},
+                username: null,
+                participantSyncInterval: null,
+                heartbeatInterval: null,
+                lastHeartbeats: {},
+                connectionStatus: {}
+            };
+            
+            // Contact public keys storage
+            let contactKeys = {};
+            
+            // Initialize by generating keys
+            generateAndDisplayKeys();
+            
+            // Helper functions
+            function showElement(el) {
+                el.classList.remove('hidden');
+            }
+            
+            function hideElement(el) {
+                el.classList.add('hidden');
+            }
+            
+            async function copyToClipboard(text) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (error) {
+                    console.error('Failed to copy:', error);
+                    return false;
+                }
+            }
+            
+            // Convert ArrayBuffer to base64
+            function arrayBufferToBase64(buffer) {
+                try {
+                    return btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
+                } catch (error) {
+                    // Handle large buffers that might cause call stack errors
+                    if (error instanceof RangeError) {
+                        let binary = '';
+                        const bytes = new Uint8Array(buffer);
+                        const len = bytes.byteLength;
+                        for (let i = 0; i < len; i++) {
+                            binary += String.fromCharCode(bytes[i]);
+                        }
+                        return btoa(binary);
+                    } else {
+                        console.error('Error converting ArrayBuffer to base64:', error);
+                        throw new Error('Invalid buffer format');
+                    }
+                }
+            }
+            
+            // Convert base64 to ArrayBuffer
+            function base64ToArrayBuffer(base64) {
+                try {
+                    const binary_string = atob(base64);
+                    const len = binary_string.length;
+                    const bytes = new Uint8Array(len);
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binary_string.charCodeAt(i);
+                    }
+                    return bytes.buffer;
+                } catch (error) {
+                    console.error('Error converting base64 to ArrayBuffer:', error);
+                    throw new Error('Invalid base64 format');
+                }
+            }
+            
+            // Generate an RSA keypair
+            async function generateKeyPair() {
+                try {
+                    // Generate an RSA keypair
+                    const keyPair = await window.crypto.subtle.generateKey(
+                        {
+                            name: "RSA-OAEP",
+                            modulusLength: 2048,
+                            publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+                            hash: { name: "SHA-256" }
+                        },
+                        true, // extractable
+                        ["encrypt", "decrypt"]
+                    );
+                    
+                    // Export the public key for sharing
+                    const publicKeyBuffer = await window.crypto.subtle.exportKey(
+                        "spki",
+                        keyPair.publicKey
+                    );
+                    
+                    // Export the private key for storage
+                    const privateKeyBuffer = await window.crypto.subtle.exportKey(
+                        "pkcs8",
+                        keyPair.privateKey
+                    );
+                    
+                    // Convert to base64 for easy sharing
+                    const publicKeyBase64 = arrayBufferToBase64(publicKeyBuffer);
+                    const privateKeyBase64 = arrayBufferToBase64(privateKeyBuffer);
+                    
+                    return {
+                        publicKey: {
+                            raw: keyPair.publicKey,
+                            base64: publicKeyBase64
+                        },
+                        privateKey: {
+                            raw: keyPair.privateKey,
+                            base64: privateKeyBase64
+                        }
+                    };
+                } catch (error) {
+                    console.error('Error generating keypair:', error);
+                    throw new Error('Failed to generate secure keypair');
+                }
+            }
+            
+            // Import a public key from base64
+            async function importPublicKey(publicKeyBase64) {
+                try {
+                    const publicKeyBuffer = base64ToArrayBuffer(publicKeyBase64);
+                    
+                    const publicKey = await window.crypto.subtle.importKey(
+                        "spki",
+                        publicKeyBuffer,
+                        {
+                            name: "RSA-OAEP",
+                            hash: { name: "SHA-256" }
+                        },
+                        true, // extractable
+                        ["encrypt"]
+                    );
+                    
+                    return publicKey;
+                } catch (error) {
+                    console.error('Error importing public key:', error);
+                    throw new Error('Invalid public key format');
+                }
+            }
+            
+            // Encrypt a message using a recipient's public key
+            async function encryptMessage(message, recipientPublicKey) {
+                try {
+                    // Encode the message
+                    const encodedMessage = new TextEncoder().encode(message);
+                    
+                    // Encrypt the message
+                    const encryptedBuffer = await window.crypto.subtle.encrypt(
+                        {
+                            name: "RSA-OAEP"
+                        },
+                        recipientPublicKey,
+                        encodedMessage
+                    );
+                    
+                    // Convert to base64 for transmission
+                    return arrayBufferToBase64(encryptedBuffer);
+                } catch (error) {
+                    console.error('Encryption error:', error);
+                    throw new Error('Failed to encrypt message: ' + error.message);
+                }
+            }
+            
+            // Decrypt a message using your private key
+            async function decryptMessage(encryptedBase64) {
+                try {
+                    if (!state.keys.privateKey || !state.keys.privateKey.raw) {
+                        throw new Error('No private key available');
+                    }
+                    
+                    if (!encryptedBase64 || typeof encryptedBase64 !== 'string') {
+                        throw new Error('Invalid encrypted message format');
+                    }
+                    
+                    // Convert from base64
+                    const encryptedBuffer = base64ToArrayBuffer(encryptedBase64);
+                    
+                    // Decrypt the message
+                    const decryptedBuffer = await window.crypto.subtle.decrypt(
+                        {
+                            name: "RSA-OAEP"
+                        },
+                        state.keys.privateKey.raw,
+                        encryptedBuffer
+                    );
+                    
+                    // Decode the message
+                    const decryptedMessage = new TextDecoder().decode(decryptedBuffer);
+                    
+                    return decryptedMessage;
+                } catch (error) {
+                    console.error('Decryption error:', error);
+                    throw new Error('Failed to decrypt message: ' + error.message);
+                }
+            }
+            
+            // Generate keys and display them
+            async function generateAndDisplayKeys() {
+                try {
+                    // Disable relevant buttons
+                    if (regenerateKeysBtn) regenerateKeysBtn.disabled = true;
+                    if (joinRegenerateKeysBtn) joinRegenerateKeysBtn.disabled = true;
+                    
+                    // Generate new keys
+                    state.keys = await generateKeyPair();
+                    
+                    // Display the public key
+                    publicKeyDisplay.textContent = state.keys.publicKey.base64;
+                    joinPublicKeyDisplay.textContent = state.keys.publicKey.base64;
+                    
+                    // Re-enable buttons
+                    if (regenerateKeysBtn) regenerateKeysBtn.disabled = false;
+                    if (joinRegenerateKeysBtn) joinRegenerateKeysBtn.disabled = false;
+                } catch (error) {
+                    console.error('Failed to generate keys:', error);
+                    alert('Failed to generate encryption keys. please refresh the page.');
+                }
+            }
+            
+            // Initialize PeerJS connection
+            function initializePeer(peerId) {
+                return new Promise((resolve, reject) => {
+                    // Create a new Peer
+                    const peer = new Peer(peerId, {
+                        debug: 1,
+                        config: {
+                            iceServers: [
+                                { urls: 'stun:stun.l.google.com:19302' },
+                                { urls: 'stun:global.stun.twilio.com:3478' },
+                                { urls: 'stun:stun.stunprotocol.org:3478' }
+                            ]
+                        },
+                        secure: true
+                    });
+                    
+                    // Set up event handlers
+                    peer.on('open', id => {
+                        console.log('PeerJS connection established with ID:', id);
+                        resolve(peer);
+                    });
+                    
+                    peer.on('error', error => {
+                        console.error('PeerJS error:', error);
+                        reject(error);
+                    });
+                    
+                    peer.on('connection', handleIncomingConnection);
+                });
+            }
+            
+            // Handle incoming connections
+            function handleIncomingConnection(conn) {
+                console.log('Incoming connection from:', conn.peer);
+                
+                // Set up connection event handlers
+                setupConnectionHandlers(conn);
+                
+                // When the connection opens, exchange public keys
+                conn.on('open', () => {
+                    // Add to active connections
+                    state.connections[conn.peer] = conn;
+                    
+                    // Send initial handshake with public key and username
+                    sendHandshake(conn);
+                });
+            }
+            
+            // Set up connection event handlers
+            function setupConnectionHandlers(conn) {
+                conn.on('data', async data => {
+                    try {
+                        // Handle different message types
+                        if (data.type === 'handshake') {
+                            // Store the contact's public key
+                            const publicKey = await importPublicKey(data.publicKey);
+                            contactKeys[conn.peer] = publicKey;
+                            
+                            // Add participant to the list
+                            state.room.participants[conn.peer] = {
+                                username: data.username,
+                                publicKey: data.publicKey
+                            };
+                            
+                            // Update participants list in UI
+                            updateParticipantsList();
+                            
+                            // Display system message about new participant
+                            addMessageToChat(`${data.username} has joined the chat`, 'system-message');
+                            
+                            // Update room status
+                            updateRoomStatus();
+                            
+                            // If we're the host, broadcast updated participant list to all clients
+                            if (state.room.isHost) {
+                                broadcastParticipantList();
+                            }
+                        } 
+                        else if (data.type === 'message') {
+                            if (state.room.isHost && data.relay) {
+                                // Host should relay this message to all other participants
+                                const senderPeerId = data.sender;
+                                const senderName = data.senderName || state.room.participants[senderPeerId]?.username || 'Unknown';
+                                
+                                // Decrypt the message from sender
+                                const decryptedMessage = await decryptMessage(data.content);
+                                
+                                // Relay to all other peers except the sender
+                                for (const peerId of Object.keys(state.connections)) {
+                                    if (peerId !== senderPeerId) {
+                                        const recipientConn = state.connections[peerId];
+                                        const recipientKey = contactKeys[peerId];
+                                        
+                                        if (recipientConn && recipientKey) {
+                                            try {
+                                                // Re-encrypt message for this specific recipient
+                                                const encryptedForRecipient = await encryptMessage(decryptedMessage, recipientKey);
+                                                
+                                                // Send the re-encrypted message
+                                                recipientConn.send({
+                                                    type: 'message',
+                                                    content: encryptedForRecipient,
+                                                    sender: senderPeerId,
+                                                    senderName: senderName,
+                                                    relayed: true,
+                                                    timestamp: data.timestamp || Date.now()
+                                                });
+                                            } catch (error) {
+                                                console.error(`Failed to relay to ${peerId}:`, error);
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // Display the message for the host too
+                                addMessageToChat(decryptedMessage, 'received', senderName);
+                            } else {
+                                // Regular message or relayed message
+                                try {
+                                    const decryptedMessage = await decryptMessage(data.content);
+                                    
+                                    // Determine sender name
+                                    let senderName;
+                                    if (data.relayed && data.senderName) {
+                                        // For relayed messages, use the original sender name
+                                        senderName = data.senderName;
+                                    } else if (data.sender && state.room.participants[data.sender]) {
+                                        // Use sender's username from participants list
+                                        senderName = state.room.participants[data.sender].username;
+                                    } else {
+                                        // Fallback to connection peer's username
+                                        senderName = state.room.participants[conn.peer]?.username || 'Unknown';
+                                    }
+                                    
+                                    // Display the message
+                                    addMessageToChat(decryptedMessage, 'received', senderName);
+                                } catch (error) {
+                                    console.error('Failed to decrypt message:', error);
+                                    addMessageToChat('Failed to decrypt message. Key mismatch?', 'system-message');
+                                }
+                            }
+                        }
+                        else if (data.type === 'leave') {
+                            // Display system message
+                            const leavingUser = state.room.participants[conn.peer]?.username || 'Unknown user';
+                            addMessageToChat(`${leavingUser} has left the chat`, 'system-message');
+                            
+                            // Remove from participants list
+                            delete state.room.participants[conn.peer];
+                            delete state.connections[conn.peer];
+                            updateParticipantsList();
+                            updateRoomStatus();
+                        }
+                        else if (data.type === 'requestParticipants') {
+                            // Only the host responds to this
+                            if (state.room.isHost) {
+                                // Send the participant list
+                                conn.send({
+                                    type: 'participantsList',
+                                    participants: state.room.participants
+                                });
+                            }
+                        }
+                        else if (data.type === 'participantsList') {
+                            // Update our local participant list with the host's data
+                            state.room.participants = data.participants;
+                            
+                            // Add our current connection info if it's not there
+                            state.room.participants[state.peer.id] = {
+                                username: state.username,
+                                publicKey: state.keys.publicKey.base64
+                            };
+                            
+                            // Update the UI
+                            updateParticipantsList();
+                            updateRoomStatus();
+                            
+                            // Refresh contact keys from the participant list
+                            Object.entries(state.room.participants).forEach(async ([peerId, participant]) => {
+                                if (peerId !== state.peer.id && participant.publicKey) {
+                                    try {
+                                        contactKeys[peerId] = await importPublicKey(participant.publicKey);
+                                    } catch (error) {
+                                        console.error(`Failed to import key for ${peerId}:`, error);
+                                    }
+                                }
+                            });
+                        }
+                        else if (data.type === 'heartbeat') {
+                            // Send a heartbeat response
+                            conn.send({
+                                type: 'heartbeatResponse',
+                                timestamp: data.timestamp,
+                                received: Date.now()
+                            });
+                        }
+                        else if (data.type === 'heartbeatResponse') {
+                            // Update the last heartbeat timestamp for this peer
+                            state.lastHeartbeats[conn.peer] = Date.now();
+                            
+                            // Update connection status to active
+                            state.connectionStatus[conn.peer] = 'active';
+                        }
+                    } catch (error) {
+                        console.error('Error processing message:', error);
+                        addMessageToChat('Error processing message: ' + error.message, 'system-message');
+                    }
+                });
+                
+                conn.on('close', () => {
+                    // Handle connection close
+                    const disconnectedUser = state.room.participants[conn.peer]?.username || 'Unknown user';
+                    addMessageToChat(`${disconnectedUser} has disconnected`, 'system-message');
+                    
+                    // Remove from participants list
+                    delete state.room.participants[conn.peer];
+                    delete state.connections[conn.peer];
+                    delete contactKeys[conn.peer];
+                    updateParticipantsList();
+                    updateRoomStatus();
+                });
+                
+                conn.on('error', error => {
+                    console.error('Connection error:', error);
+                    addMessageToChat('Connection error: ' + error.message, 'system-message');
+                });
+            }
+            
+            // Send initial handshake with public key and username
+            function sendHandshake(conn) {
+                conn.send({
+                    type: 'handshake',
+                    publicKey: state.keys.publicKey.base64,
+                    username: state.username
+                });
+            }
+            
+            // Create and host a new chat room
+            async function createChatRoom() {
+                try {
+                    // Get room name and validate
+                    const roomName = roomNameInput.value.trim();
+                    if (!roomName) {
+                        alert('Please enter a room name');
+                        return;
+                    }
+                    
+                    // Get username and validate
+                    const username = usernameInput.value.trim();
+                    if (!username) {
+                        alert('Please enter your display name');
+                        return;
+                    }
+                    
+                    // Update UI
+                    createRoomBtn.disabled = true;
+                    createRoomBtn.innerHTML = '<span class="loader"></span> Creating Room...';
+                    
+                    // Update state
+                    state.room.name = roomName;
+                    state.room.isHost = true;
+                    state.username = username;
+                    
+                    // Initialize peer connection
+                    try {
+                        state.peer = await initializePeer(roomName);
+                        
+                        // Add host to participants list
+                        state.room.participants[roomName] = {
+                            username: username,
+                            publicKey: state.keys.publicKey.base64,
+                            isHost: true
+                        };
+                        
+                        // Update connection status
+                        connectionIndicator.classList.remove('status-offline');
+                        connectionIndicator.classList.add('status-online');
+                        encryptionStatusText.textContent = 'Secure room created. Waiting for participants...';
+                        
+                        // Update room display name
+                        currentRoomName.textContent = roomName;
+                        
+                        // Update participants list
+                        updateParticipantsList();
+                        
+                        // Switch to chat interface
+                        hideElement(setupInterface);
+                        showElement(chatInterface);
+                        
+                        // Focus message input
+                        setTimeout(() => messageInput.focus(), 100);
+                        
+                        // Add system message
+                        addMessageToChat(`Room "${roomName}" created and ready for secure chat`, 'system-message');
+                        addMessageToChat(`Share your public key and room name with others so they can join`, 'system-message');
+                        
+                        // Set up periodic participant list sync
+                        if (state.participantSyncInterval) {
+                            clearInterval(state.participantSyncInterval);
+                        }
+                        state.participantSyncInterval = setInterval(() => {
+                            if (state.room.isHost && Object.keys(state.connections).length > 0) {
+                                broadcastParticipantList();
+                            }
+                        }, 30000); // Sync every 30 seconds
+                    } catch (error) {
+                        alert(`Failed to create room: ${error.message}`);
+                        createRoomBtn.disabled = false;
+                        createRoomBtn.textContent = 'Create Chat Room';
+                    }
+                } catch (error) {
+                    console.error('Error creating room:', error);
+                    alert(`Error creating room: ${error.message}`);
+                    createRoomBtn.disabled = false;
+                    createRoomBtn.textContent = 'Create Chat Room';
+                }
+            }
+            
+            // Join an existing chat room
+            async function joinChatRoom() {
+                try {
+                    // Get room name and validate
+                    const roomName = joinRoomNameInput.value.trim();
+                    if (!roomName) {
+                        alert('Please enter a room name to join');
+                        return;
+                    }
+                    
+                    // Get username and validate
+                    const username = joinUsernameInput.value.trim();
+                    if (!username) {
+                        alert('Please enter your display name');
+                        return;
+                    }
+                    
+                    // Get host public key and validate
+                    const hostPublicKey = hostPublicKeyInput.value.trim();
+                    if (!hostPublicKey) {
+                        alert('Please enter the host\'s public key');
+                        return;
+                    }
+                    
+                    // Update UI
+                    joinRoomBtn.disabled = true;
+                    joinRoomBtn.innerHTML = '<span class="loader"></span> Joining Room...';
+                    
+                    // Import the host's public key
+                    try {
+                        const hostKey = await importPublicKey(hostPublicKey);
+                        contactKeys[roomName] = hostKey;
+                    } catch (error) {
+                        alert(`Invalid host public key: ${error.message}`);
+                        joinRoomBtn.disabled = false;
+                        joinRoomBtn.textContent = 'Join Chat Room';
+                        return;
+                    }
+                    
+                    // Update state
+                    state.room.name = roomName;
+                    state.room.isHost = false;
+                    state.username = username;
+                    
+                    try {
+                        // Initialize peer with a random ID that includes username for better identification
+                        const peerId = `user-${username.replace(/\s+/g, '_')}-${Date.now().toString(36)}`;
+                        state.peer = await initializePeer(peerId);
+                        
+                        // Update connection status
+                        connectionIndicator.classList.remove('status-offline');
+                        connectionIndicator.classList.add('status-connecting');
+                        encryptionStatusText.textContent = 'Connecting to room...';
+                        
+                        // Connect to the host
+                        const conn = state.peer.connect(roomName, {
+                            reliable: true,
+                            metadata: { username: username }
+                        });
+                        
+                        // Set up connection handlers
+                        setupConnectionHandlers(conn);
+                        
+                        // Handle successful connection
+                        conn.on('open', () => {
+                            // Store connection
+                            state.connections[roomName] = conn;
+                            
+                            // Add host to participants list
+                            state.room.participants[roomName] = {
+                                username: 'Room Host', // Will be updated when handshake is received
+                                publicKey: hostPublicKey,
+                                isHost: true
+                            };
+                            
+                            // Update connection status
+                            connectionIndicator.classList.remove('status-connecting');
+                            connectionIndicator.classList.add('status-online');
+                            encryptionStatusText.textContent = 'Connected to secure room';
+                            
+                            // Update room display name
+                            currentRoomName.textContent = roomName;
+                            
+                            // Update participants list
+                            updateParticipantsList();
+                            
+                            // Switch to chat interface
+                            hideElement(setupInterface);
+                            showElement(chatInterface);
+                            
+                            // Send handshake
+                            sendHandshake(conn);
+                            
+                            // If we're connecting to a host, we need to explicitly ask for participant list
+                            if (!state.room.isHost) {
+                                conn.send({
+                                    type: 'requestParticipants'
+                                });
+                            }
+                            
+                            // Add system message
+                            addMessageToChat(`Connected to room "${roomName}"`, 'system-message');
+                            
+                            // Set up periodic participant list requests for clients
+                            if (state.participantSyncInterval) {
+                                clearInterval(state.participantSyncInterval);
+                            }
+                            state.participantSyncInterval = setInterval(() => {
+                                if (!state.room.isHost && conn) {
+                                    try {
+                                        conn.send({
+                                            type: 'requestParticipants'
+                                        });
+                                    } catch (e) {
+                                        console.error('Error requesting participants:', e);
+                                    }
+                                }
+                            }, 45000); // Request updated list every 45 seconds
+                            
+                            // Focus message input
+                            setTimeout(() => messageInput.focus(), 100);
+                        });
+                        
+                        // Handle connection error
+                        conn.on('error', error => {
+                            console.error('Connection error:', error);
+                            alert(`Failed to connect to room: ${error.message}`);
+                            joinRoomBtn.disabled = false;
+                            joinRoomBtn.textContent = 'Join Chat Room';
+                        });
+                    } catch (error) {
+                        alert(`Failed to initialize connection: ${error.message}`);
+                        joinRoomBtn.disabled = false;
+                        joinRoomBtn.textContent = 'Join Chat Room';
+                    }
+                } catch (error) {
+                    console.error('Error joining room:', error);
+                    alert(`Error joining room: ${error.message}`);
+                    joinRoomBtn.disabled = false;
+                    joinRoomBtn.textContent = 'Join Chat Room';
+                }
+            }
+            
+            // Send a message to all room participants
+            async function sendMessageToAll(message) {
+                try {
+                    // Don't send empty messages
+                    if (!message.trim()) return;
+                    
+                    // First display own message
+                    addMessageToChat(message, 'sent', state.username);
+                    
+                    if (state.room.isHost) {
+                        // Host mode: Encrypt and send to each client individually
+                        const participantIds = Object.keys(state.connections);
+                        
+                        if (participantIds.length === 0) {
+                            addMessageToChat('No one else is in the room to receive your message', 'system-message');
+                            return;
+                        }
+                        
+                        // For each connection, encrypt the message with recipient's public key and send
+                        for (const peerId of participantIds) {
+                            const conn = state.connections[peerId];
+                            const recipientKey = contactKeys[peerId];
+                            
+                            if (conn && recipientKey) {
+                                try {
+                                    // Encrypt message for this specific recipient
+                                    const encryptedMessage = await encryptMessage(message, recipientKey);
+                                    
+                                    // Send the encrypted message
+                                    conn.send({
+                                        type: 'message',
+                                        content: encryptedMessage,
+                                        sender: state.peer.id,
+                                        timestamp: Date.now()
+                                    });
+                                } catch (error) {
+                                    console.error(`Failed to send to ${peerId}:`, error);
+                                }
+                            }
+                        }
+                    } else {
+                        // Client mode: Only send to host, who will relay to others
+                        const hostConnection = state.connections[state.room.name];
+                        const hostKey = contactKeys[state.room.name];
+                        
+                        if (!hostConnection || !hostKey) {
+                            addMessageToChat('Not connected to host, message cannot be sent', 'system-message');
+                            return;
+                        }
+                        
+                        try {
+                            // Encrypt message for host
+                            const encryptedMessage = await encryptMessage(message, hostKey);
+                            
+                            // Send the encrypted message to host with relay flag
+                            hostConnection.send({
+                                type: 'message',
+                                content: encryptedMessage,
+                                sender: state.peer.id,
+                                senderName: state.username,
+                                relay: true,  // Tell host to relay this message
+                                timestamp: Date.now()
+                            });
+                        } catch (error) {
+                            console.error('Failed to send message to host:', error);
+                            addMessageToChat('Error sending message: ' + error.message, 'system-message');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Failed to send message:', error);
+                    addMessageToChat('Error sending message: ' + error.message, 'system-message');
+                }
+            }
+            
+            // Add a message to the chat display
+            function addMessageToChat(message, type, sender) {
+                // Skip system messages about connections - they go to the status bar now
+                if (type === 'system-message' && 
+                    (message.includes('connection') || 
+                     message.includes('Connection') || 
+                     message.includes('reconnect') || 
+                     message.includes('Reconnect') ||
+                     message.includes('joined') ||
+                     message.includes('left') ||
+                     message.includes('room') ||
+                     message.includes('Room') ||
+                     message.includes('waiting') ||
+                     message.includes('Waiting'))) {
+                    // Update the status bar instead
+                    updateConnectionStatus(message);
+                    return;
+                }
+                
+                const messageEl = document.createElement('div');
+                messageEl.classList.add('message');
+                messageEl.classList.add(type);
+                
+                // Create message content
+                if (type === 'sent' || type === 'received') {
+                    const usernameEl = document.createElement('span');
+                    usernameEl.classList.add('username');
+                    usernameEl.textContent = sender || 'Anonymous';
+                    messageEl.appendChild(usernameEl);
+                    
+                    const messageContent = document.createElement('span');
+                    messageContent.classList.add('message-content');
+                    messageContent.textContent = message;
+                    messageEl.appendChild(messageContent);
+                } else {
+                    messageEl.textContent = message;
+                }
+                
+                // Add timestamp
+                const timestamp = document.createElement('span');
+                timestamp.classList.add('timestamp');
+                const now = new Date();
+                timestamp.textContent = now.toLocaleTimeString();
+                messageEl.appendChild(timestamp);
+                
+                // Add to container
+                messageContainer.appendChild(messageEl);
+                
+                // Scroll to bottom
+                setTimeout(() => {
+                    messageContainer.scrollTop = messageContainer.scrollHeight;
+                }, 10);
+            }
+            
+            // Update the participants list display
+            function updateParticipantsList() {
+                // Clear existing participants
+                participantsList.innerHTML = '';
+                
+                // Add each participant
+                Object.entries(state.room.participants).forEach(([peerId, participant]) => {
+                    const participantEl = document.createElement('div');
+                    participantEl.classList.add('participant');
+                    
+                    // Add connection status indicator
+                    const statusIndicator = document.createElement('span');
+                    statusIndicator.classList.add('connection-indicator');
+                    
+                    // Apply the appropriate status class
+                    const status = state.connectionStatus[peerId] || 'unknown';
+                    statusIndicator.classList.add(`status-${status}`);
+                    participantEl.appendChild(statusIndicator);
+                    
+                    // Username
+                    const usernameEl = document.createElement('span');
+                    usernameEl.textContent = participant.username || 'Unknown';
+                    if (peerId === state.peer.id) {
+                        usernameEl.textContent += ' (You)';
+                    }
+                    if (participant.isHost) {
+                        usernameEl.textContent += ' (Host)';
+                    }
+                    participantEl.appendChild(usernameEl);
+                    
+                    // Add to list
+                    participantsList.appendChild(participantEl);
+                });
+            }
+            
+            // Update room status based on number of participants
+            function updateRoomStatus() {
+                const count = Object.keys(state.room.participants).length;
+                
+                if (count <= 1) {
+                    roomStatus.textContent = 'Waiting for others to join...';
+                    // Yellow "waiting" status
+                    connectionIndicator.classList.remove('status-online');
+                    connectionIndicator.classList.add('status-connecting');
+                } else {
+                    roomStatus.textContent = `${count} participants in this room`;
+                    // Green "active" status when participants are present
+                    connectionIndicator.classList.remove('status-connecting');
+                    connectionIndicator.classList.add('status-online');
+                }
+            }
+            
+            // Broadcast participant list to all connected clients
+            function broadcastParticipantList() {
+                // Only the host should broadcast
+                if (!state.room.isHost) return;
+                
+                // Send to all connections
+                Object.values(state.connections).forEach(conn => {
+                    try {
+                        conn.send({
+                            type: 'participantsList',
+                            participants: state.room.participants,
+                            timestamp: Date.now()
+                        });
+                    } catch (e) {
+                        console.error('Error broadcasting participant list:', e);
+                    }
+                });
+            }
+            
+            // Leave the current room
+            function leaveRoom() {
+                // Clear any sync intervals
+                if (state.participantSyncInterval) {
+                    clearInterval(state.participantSyncInterval);
+                    state.participantSyncInterval = null;
+                }
+                
+                // Clear heartbeat interval
+                if (state.heartbeatInterval) {
+                    clearInterval(state.heartbeatInterval);
+                    state.heartbeatInterval = null;
+                }
+                
+                // Notify all connections that we're leaving
+                Object.values(state.connections).forEach(conn => {
+                    try {
+                        conn.send({
+                            type: 'leave',
+                            username: state.username
+                        });
+                        conn.close();
+                    } catch (e) {
+                        console.error('Error while closing connection:', e);
+                    }
+                });
+                
+                // Close the peer connection
+                if (state.peer) {
+                    state.peer.destroy();
+                }
+                
+                // Reset the state
+                state.connections = {};
+                state.room.participants = {};
+                state.room.name = null;
+                state.room.isHost = false;
+                state.peer = null;
+                
+                // Update UI
+                connectionIndicator.classList.remove('status-online', 'status-connecting');
+                connectionIndicator.classList.add('status-offline');
+                encryptionStatusText.textContent = 'Encryption not active - create or join a room to begin';
+                
+                // Clear messages
+                messageContainer.innerHTML = '';
+                
+                // Show setup interface, hide chat
+                hideElement(chatInterface);
+                showElement(setupInterface);
+                
+                // Reset UI elements
+                if (state.mode === 'create') {
+                    createRoomBtn.disabled = false;
+                    createRoomBtn.textContent = 'Create Chat Room';
+                } else {
+                    joinRoomBtn.disabled = false;
+                    joinRoomBtn.textContent = 'Join Chat Room';
+                }
+                
+                // Add a default system message to the empty chat
+                addMessageToChat('End-to-end encrypted chat active. messages can only be read by chat participants.', 'system-message');
+            }
+            
+            // Event listeners - Mode toggle
+            createRoomOption.addEventListener('click', () => {
+                createRoomOption.classList.add('active');
+                joinRoomOption.classList.remove('active');
+                showElement(createRoomPanel);
+                hideElement(joinRoomPanel);
+                state.mode = 'create';
+            });
+            
+            joinRoomOption.addEventListener('click', () => {
+                joinRoomOption.classList.add('active');
+                createRoomOption.classList.remove('active');
+                showElement(joinRoomPanel);
+                hideElement(createRoomPanel);
+                state.mode = 'join';
+            });
+            
+            // Event listeners - Create room
+            copyPublicKeyBtn.addEventListener('click', async () => {
+                const success = await copyToClipboard(publicKeyDisplay.textContent);
+                if (success) {
+                    copyPublicKeyBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyPublicKeyBtn.textContent = 'Copy Public Key';
+                    }, 2000);
+                }
+            });
+            
+            regenerateKeysBtn.addEventListener('click', generateAndDisplayKeys);
+            
+            createRoomBtn.addEventListener('click', createChatRoom);
+            
+            // Event listeners - Join room
+            copyJoinPublicKeyBtn.addEventListener('click', async () => {
+                const success = await copyToClipboard(joinPublicKeyDisplay.textContent);
+                if (success) {
+                    copyJoinPublicKeyBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyJoinPublicKeyBtn.textContent = 'Copy Your Public Key';
+                    }, 2000);
+                }
+            });
+            
+            joinRegenerateKeysBtn.addEventListener('click', generateAndDisplayKeys);
+            
+            joinRoomBtn.addEventListener('click', joinChatRoom);
+            
+            // Event listeners - Chat
+            sendButton.addEventListener('click', () => {
+                const message = messageInput.value.trim();
+                if (message) {
+                    sendMessageToAll(message);
+                    messageInput.value = '';
+                    messageInput.focus();
+                }
+            });
+            
+            // Add copy host key button functionality
+            document.getElementById('copy-host-key-btn').addEventListener('click', async () => {
+                try {
+                    // If we're the host, copy our own public key
+                    if (state.room.isHost) {
+                        const success = await copyToClipboard(state.keys.publicKey.base64);
+                        if (success) {
+                            document.getElementById('copy-host-key-btn').textContent = 'Copied!';
+                            setTimeout(() => {
+                                document.getElementById('copy-host-key-btn').textContent = 'Copy Host Public Key';
+                            }, 2000);
+                        }
+                    } 
+                    // If we're not the host, copy the host's public key
+                    else {
+                        // Find the host in the participants list
+                        const hostId = Object.keys(state.room.participants).find(id => 
+                            state.room.participants[id].isHost === true);
+                        
+                        if (hostId && state.room.participants[hostId].publicKey) {
+                            const success = await copyToClipboard(state.room.participants[hostId].publicKey);
+                            if (success) {
+                                document.getElementById('copy-host-key-btn').textContent = 'Copied!';
+                                setTimeout(() => {
+                                    document.getElementById('copy-host-key-btn').textContent = 'Copy Host Public Key';
+                                }, 2000);
+                            }
+                        } else {
+                            alert('Host public key not available');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error copying host key:', error);
+                    alert('Failed to copy host key');
+                }
+            });
+            
+            messageInput.addEventListener('keypress', e => {
+                if (e.key === 'Enter') {
+                    sendButton.click();
+                }
+            });
+            
+            leaveRoomBtn.addEventListener('click', leaveRoom);
+            
+            // Status details toggle
+            document.getElementById('toggle-status-details').addEventListener('click', function() {
+                const statusDetails = document.getElementById('status-details');
+                if (statusDetails.style.display === 'none' || !statusDetails.style.display) {
+                    statusDetails.style.display = 'block';
+                    this.textContent = '⊖'; // Change to minus icon
+                    this.title = 'Hide connection status history';
+                } else {
+                    statusDetails.style.display = 'none';
+                    this.textContent = '⊕'; // Change to plus icon
+                    this.title = 'Show connection status history';
+                }
+            });
+            
+            // Connection recovery variables
+            let reconnectionAttempts = 0;
+            const maxReconnectionAttempts = 3;
+            let reconnectionTimer = null;
+            
+            // Page visibility handling to reconnect when device wakes up
+            document.addEventListener('visibilitychange', () => {
+                // Check if the page is becoming visible again
+                if (!document.hidden && state.room.name) {
+                    console.log('Page became visible, will check connection after delay...');
+                    
+                    // Add reconnection message to status
+                    updateConnectionStatus('Device woke up. Checking connection in 3 seconds...', 'warning');
+                    
+                    // Clear any existing timers
+                    if (reconnectionTimer) {
+                        clearTimeout(reconnectionTimer);
+                    }
+                    
+                    // Set a delay before checking connection to allow network to stabilize
+                    reconnectionTimer = setTimeout(() => {
+                        // Now check if connection is actually lost
+                        if (!state.peer || !state.peer.open || state.peer.disconnected) {
+                            console.log('Connection appears to be lost, attempting recovery...');
+                            
+                            // Update UI to show reconnecting status
+                            connectionIndicator.classList.remove('status-offline', 'status-online');
+                            connectionIndicator.classList.add('status-connecting');
+                            encryptionStatusText.textContent = 'Reconnecting...';
+                            
+                            // Reset reconnection counter
+                            reconnectionAttempts = 0;
+                            
+                            // Attempt to reconnect with exponential backoff
+                            attemptReconnectionWithBackoff();
+                        } else {
+                            console.log('Connection still seems good after wake up');
+                            addMessageToChat('Connection verified, chat is active', 'system-message');
+                        }
+                    }, 3000); // Give a 3-second delay for network to stabilize
+                }
+            });
+
+            // Function to attempt reconnection with exponential backoff
+            function attemptReconnectionWithBackoff() {
+                reconnectionAttempts++;
+                
+                if (reconnectionAttempts <= maxReconnectionAttempts) {
+                    updateConnectionStatus(`Reconnection attempt ${reconnectionAttempts}/${maxReconnectionAttempts}...`, 'warning');
+                    
+                    // Exponential backoff delay
+                    const delay = Math.min(1000 * Math.pow(2, reconnectionAttempts - 1), 8000);
+                    
+                    setTimeout(() => {
+                        attemptReconnection().then(success => {
+                            if (!success && reconnectionAttempts < maxReconnectionAttempts) {
+                                attemptReconnectionWithBackoff();
+                            }
+                        });
+                    }, delay);
+                } else {
+                    // We've exhausted our reconnection attempts
+                    addMessageToChat('Could not reconnect after multiple attempts. Please refresh the page to rejoin.', 'system-message');
+                    connectionIndicator.classList.remove('status-connecting');
+                    connectionIndicator.classList.add('status-offline');
+                    encryptionStatusText.textContent = 'Connection lost. Please refresh to rejoin.';
+                }
+            }
+
+            // Function to attempt reconnection
+            async function attemptReconnection() {
+                try {
+                    console.log('Attempting to reconnect...');
+                    
+                    // Clear any existing sync intervals
+                    if (state.participantSyncInterval) {
+                        clearInterval(state.participantSyncInterval);
+                        state.participantSyncInterval = null;
+                    }
+                    
+                    // Close any existing peer connection
+                    if (state.peer) {
+                        state.peer.destroy();
+                    }
+                    
+                    // Clear existing connections
+                    state.connections = {};
+                    
+                    // If we're the host, recreate the room
+                    if (state.room.isHost) {
+                        // Initialize peer connection with the same room name
+                        state.peer = await initializePeer(state.room.name);
+                        
+                        // Update connection status
+                        connectionIndicator.classList.remove('status-connecting');
+                        connectionIndicator.classList.add('status-online');
+                        encryptionStatusText.textContent = 'Reconnected. Waiting for participants...';
+                        
+                        // Add system message
+                        addMessageToChat('Reconnected. Room restored.', 'system-message');
+                        
+                        // Update room status
+                        updateRoomStatus();
+                        return true;
+                    } 
+                    // If we're a client, reconnect to the host
+                    else {
+                        // Initialize peer with a random ID that includes username
+                        const peerId = `user-${state.username.replace(/\s+/g, '_')}-${Date.now().toString(36)}`;
+                        state.peer = await initializePeer(peerId);
+                        
+                        // Get host key
+                        const hostKey = contactKeys[state.room.name];
+                        if (!hostKey) {
+                            throw new Error('Host key not found. Please rejoin the room.');
+                        }
+                        
+                        // Connect to the host
+                        const conn = state.peer.connect(state.room.name, {
+                            reliable: true,
+                            metadata: { username: state.username }
+                        });
+                        
+                        // Return a promise that resolves when connection is established or fails
+                        return new Promise((resolve) => {
+                            // Set a timeout in case the connection attempt hangs
+                            const timeout = setTimeout(() => {
+                                console.log('Connection attempt timed out');
+                                resolve(false);
+                            }, 10000); // 10 second timeout
+                            
+                            // Set up connection handlers
+                            setupConnectionHandlers(conn);
+                            
+                            // Handle successful reconnection
+                            conn.on('open', () => {
+                                clearTimeout(timeout);
+                                // Store connection
+                                state.connections[state.room.name] = conn;
+                                
+                                // Update connection status
+                                connectionIndicator.classList.remove('status-connecting');
+                                connectionIndicator.classList.add('status-online');
+                                encryptionStatusText.textContent = 'Reconnected to secure room';
+                                
+                                // Send handshake
+                                sendHandshake(conn);
+                                
+                                // Request updated participants list
+                                conn.send({
+                                    type: 'requestParticipants'
+                                });
+                                
+                                // Add system message
+                                addMessageToChat('Reconnected to chat room', 'system-message');
+                                
+                                // Set up periodic participant list requests for clients
+                                if (state.participantSyncInterval) {
+                                    clearInterval(state.participantSyncInterval);
+                                }
+                                state.participantSyncInterval = setInterval(() => {
+                                    if (!state.room.isHost && conn) {
+                                        try {
+                                            conn.send({
+                                                type: 'requestParticipants'
+                                            });
+                                        } catch (e) {
+                                            console.error('Error requesting participants:', e);
+                                        }
+                                    }
+                                }, 45000); // Request updated list every 45 seconds
+                                
+                                // Focus message input
+                                setTimeout(() => messageInput.focus(), 100);
+                                
+                                resolve(true);
+                            });
+                            
+                            // Handle connection error
+                            conn.on('error', error => {
+                                clearTimeout(timeout);
+                                console.error('Reconnection error:', error);
+                                addMessageToChat(`Failed to reconnect: ${error.message}`, 'system-message');
+                                
+                                resolve(false);
+                            });
+                        });
+                    }
+                } catch (error) {
+                    console.error('Reconnection failed:', error);
+                    addMessageToChat(`Reconnection failed: ${error.message}`, 'system-message');
+                    
+                    // Update UI
+                    connectionIndicator.classList.remove('status-connecting');
+                    connectionIndicator.classList.add('status-offline');
+                    encryptionStatusText.textContent = 'Connection lost. Please try again.';
+                    
+                    return false;
+                }
+            }
+
+            // Set up heartbeat interval
+            if (state.heartbeatInterval) {
+                clearInterval(state.heartbeatInterval);
+            }
+            state.heartbeatInterval = setInterval(sendHeartbeats, 1000); // Send heartbeats every second
+
+            // Send heartbeats to check if connections are alive
+            function sendHeartbeats() {
+                if (!state.room.name) return; // Not in a room
+                
+                // Get current time
+                const now = Date.now();
+                
+                // Check existing connections
+                Object.entries(state.connections).forEach(([peerId, conn]) => {
+                    try {
+                        // Send a heartbeat
+                        conn.send({
+                            type: 'heartbeat',
+                            timestamp: now
+                        });
+                        
+                        // Check if we've received a response recently
+                        const lastResponse = state.lastHeartbeats[peerId] || 0;
+                        const timeSinceResponse = now - lastResponse;
+                        
+                        // Update connection status based on response time
+                        if (timeSinceResponse > 10000) { // No response for 10 seconds
+                            // Mark as offline
+                            state.connectionStatus[peerId] = 'offline';
+                            
+                            // If offline for too long, remove the connection
+                            if (timeSinceResponse > 30000) { // 30 seconds
+                                console.log(`Connection to ${peerId} appears to be lost, removing`);
+                                
+                                // Remove from participant list if we're the host
+                                if (state.room.isHost) {
+                                    delete state.room.participants[peerId];
+                                    delete state.connections[peerId];
+                                    delete state.lastHeartbeats[peerId];
+                                    delete state.connectionStatus[peerId];
+                                    
+                                    // Broadcast updated participant list
+                                    broadcastParticipantList();
+                                }
+                            }
+                        } else if (timeSinceResponse > 5000) { // No response for 5 seconds
+                            // Mark as inactive
+                            state.connectionStatus[peerId] = 'inactive';
+                        } else {
+                            // Mark as active
+                            state.connectionStatus[peerId] = 'active';
+                        }
+                    } catch (error) {
+                        console.error(`Error sending heartbeat to ${peerId}:`, error);
+                        state.connectionStatus[peerId] = 'error';
+                    }
+                });
+                
+                // Update the UI to reflect connection statuses
+                updateParticipantsList();
+            }
+
+            // Update the connection status bar
+            function updateConnectionStatus(message, type = 'info') {
+                // Update the encryption status text
+                if (message) {
+                    encryptionStatusText.textContent = message.charAt(0).toUpperCase() + message.slice(1);
+                }
+                
+                // Add to detailed status
+                const statusDetails = document.getElementById('status-details');
+                
+                // Create status message element
+                const statusMessage = document.createElement('div');
+                statusMessage.classList.add('status-message');
+                statusMessage.classList.add(type);
+                
+                // Add timestamp and message
+                const now = new Date();
+                statusMessage.textContent = `${now.toLocaleTimeString()}: ${message}`;
+                
+                // Add to container
+                statusDetails.appendChild(statusMessage);
+                
+                // Show the status details
+                statusDetails.style.display = 'block';
+                
+                // Keep only the last 10 messages
+                while (statusDetails.children.length > 10) {
+                    statusDetails.removeChild(statusDetails.firstChild);
+                }
+                
+                // Scroll to bottom
+                statusDetails.scrollTop = statusDetails.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
