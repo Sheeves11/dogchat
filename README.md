@@ -4,6 +4,9 @@
 
 dogchat is a completely self-contained secure messaging application that runs entirely in your browser. it uses strong rsa-2048 encryption and true peer-to-peer connections through webrtc.
 
+![image](https://github.com/user-attachments/assets/e8e327d5-69a0-4042-94e6-c7002983323e)
+
+
 ## why dogchat exists
 
 there's a lot going on in the world right now and having extreme opsec options available to the general public is important. signal and other encrypted chat apps are great for most cases, but i always had a bit of distrust for them because i can't understand their large codebases.
