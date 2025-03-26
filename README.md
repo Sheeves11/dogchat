@@ -2,7 +2,7 @@
 
 ## secure p2p encrypted chat in a single html file
 
-dogchat is a completely self-contained secure messaging application that runs entirely in your browser. it uses strong rsa-2048 encryption and true peer-to-peer connections through webrtc.
+dogchat is a completely self-contained secure messaging application that runs entirely in your browser. it uses strong rsa-2048 encryption and true peer-to-peer connections through webrtc. try it out at ![www.sheeves.art/secretchat](www.sheeves.art/secretchat)
 
 ![image](https://github.com/user-attachments/assets/e8e327d5-69a0-4042-94e6-c7002983323e)
 
